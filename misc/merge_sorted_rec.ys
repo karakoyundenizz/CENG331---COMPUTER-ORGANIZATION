@@ -1,0 +1,107 @@
+# Name-Surname: Deniz Karakoyun
+# ID: 2580678
+
+
+
+# Execution begins at address 0 
+.pos 0
+    irmovq stack, %rsp      # Set up stack pointer
+    call Main               # Execute main program
+    halt                    # Terminate program
+
+# Array Data 
+.pos 0x200
+    .align 8
+a:
+    .quad 1
+    .quad a1
+a1:
+    .quad 4
+    .quad a2
+a2:
+    .quad 7
+    .quad a3      
+a3:
+    .quad 10
+    .quad 0       # NULL 
+b:
+    .quad 2
+    .quad b1
+b1:
+    .quad 3
+    .quad b2
+b2:
+    .quad 5
+    .quad b3      
+b3:
+    .quad 8
+    .quad 0       # NULL
+
+
+
+
+
+
+Main:
+    irmovq a, %rdi        # 1st argument = list a
+    irmovq b, %rsi        # 2nd argument = list b
+    call merge_sorted_rec
+    ret
+
+
+
+
+merge_sorted_rec:
+
+    pushq %r13 
+    pushq %r12
+
+    # if control with a==NULL 
+    rrmovq %rsi,%rax
+    andq %rdi,%rdi
+    je     done_rec
+
+    # if control with b==NULL 
+    rrmovq %rdi,%rax
+    andq %rsi,%rsi
+    je     done_rec
+
+    # checking (a->data <= b->data) part r9 = a->data | r10 = b->data
+    mrmovq (%rdi),%r9         # a->data
+    mrmovq (%rsi),%r10        # b->data
+    subq  %r9,%r10            #doing b->data -= a -> data 
+	jl else_part
+
+
+    # r12 = rdi = a  | r13 = rsi = b
+
+
+    # if part (a->data <= b->data) TRUE
+    rrmovq %rdi,%r12
+    rrmovq %rsi,%r13
+    mrmovq 8(%rdi),%rdi        # preparing recursive function call with rdi a = a-> next
+    call merge_sorted_rec
+    rmmovq %rax, 8(%r12)
+    rrmovq %r12, %rax
+    jmp done_rec
+
+else_part:
+
+    # else part (a->data <= b->data) FALSE
+    rrmovq %rdi,%r12
+    rrmovq %rsi,%r13
+    mrmovq 8(%rsi),%rsi        # preparing recursive function call with rdi b = b -> next
+    call merge_sorted_rec
+    rmmovq %rax, 8(%r13)
+    rrmovq %r13, %rax
+
+done_rec:
+    popq  %r12
+    popq  %r13
+    ret
+
+
+
+# Stack starts here and grows to lower addresses
+	.pos 0x800
+stack:

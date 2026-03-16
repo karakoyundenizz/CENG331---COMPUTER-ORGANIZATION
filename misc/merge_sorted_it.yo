@@ -1,0 +1,122 @@
+                            | # Name-Surname: Deniz Karakoyun
+                            | # ID: 2580678
+                            | 
+                            | 
+                            | 
+                            | # Execution begins at address 0 
+0x000:                      | .pos 0
+0x000: 30f40008000000000000 |     irmovq stack, %rsp      # Set up stack pointer
+0x00a: 808002000000000000   |     call Main               # Execute main program
+0x013: 00                   |     halt                    # Terminate program
+                            | 
+                            | # Array Data 
+0x200:                      | .pos 0x200
+0x200:                      |     .align 8
+0x200:                      | a:
+0x200: 0100000000000000     |     .quad 1
+0x208: 1002000000000000     |     .quad a1
+0x210:                      | a1:
+0x210: 0400000000000000     |     .quad 4
+0x218: 2002000000000000     |     .quad a2
+0x220:                      | a2:
+0x220: 0700000000000000     |     .quad 7
+0x228: 3002000000000000     |     .quad a3      
+0x230:                      | a3:
+0x230: 0a00000000000000     |     .quad 10
+0x238: 0000000000000000     |     .quad 0       # NULL 
+0x240:                      | b:
+0x240: 0200000000000000     |     .quad 2
+0x248: 5002000000000000     |     .quad b1
+0x250:                      | b1:
+0x250: 0300000000000000     |     .quad 3
+0x258: 6002000000000000     |     .quad b2
+0x260:                      | b2:
+0x260: 0500000000000000     |     .quad 5
+0x268: 7002000000000000     |     .quad b3      
+0x270:                      | b3:
+0x270: 0800000000000000     |     .quad 8
+0x278: 0000000000000000     |     .quad 0       # NULL
+                            | 
+                            | 
+                            | 
+                            | 
+                            | 
+0x280:                      | Main:
+0x280: 30f70002000000000000 |     irmovq a, %rdi        # 1st argument = list a
+0x28a: 30f64002000000000000 |     irmovq b, %rsi        # 2nd argument = list b
+0x294: 809e02000000000000   |     call merge_sorted_it
+0x29d: 90                   |     ret
+                            | 
+                            | 
+                            | 
+                            | 
+0x29e:                      | merge_sorted_it:
+                            | 
+                            |     # dummy is now located at address %rsp to store head poinetr
+0x29e: 30f81000000000000000 |     irmovq $16, %r8
+0x2a8: 6184                 |     subq   %r8, %rsp
+                            | 
+                            |     # struct Node *tail = &dummy
+0x2aa: 2042                 |     rrmovq %rsp, %rdx     
+                            |     
+                            |     # set dummy.next = NULL(0)
+0x2ac: 30f80000000000000000 |     irmovq $0, %r8
+0x2b6: 40820800000000000000 |     rmmovq %r8, 8(%rdx)
+                            | 
+                            | 
+                            |     # rdx = tail pointer
+                            | 
+0x2c0:                      | test:
+                            | 
+                            |     # while condition (a != NULL && b != NULL)
+0x2c0: 6277                 |     andq %rdi,%rdi
+0x2c2: 734603000000000000   |     je attach_end_b
+0x2cb: 6266                 |     andq %rsi,%rsi
+0x2cd: 733303000000000000   |     je attach_end_a
+                            | 
+0x2d6:                      | loop:
+                            | 
+                            |     # check (a->data <= b->data)
+0x2d6: 50970000000000000000 |     mrmovq (%rdi),%r9         # a->data
+0x2e0: 50a60000000000000000 |     mrmovq (%rsi),%r10        # b->data
+0x2ea: 619a                 |     subq  %r9,%r10            #doing b->data -= a -> data  
+0x2ec: 751403000000000000   |     jge inner_if
+                            | 
+                            |     # else_part (a->data <= b->data) FALSE 
+0x2f5: 40620800000000000000 |     rmmovq %rsi,8(%rdx)     # tail -> next = b
+0x2ff: 2062                 |     rrmovq %rsi, %rdx       # tail = (b) tail -> next
+0x301: 50660800000000000000 |     mrmovq 8(%rsi),%rsi     # b = b -> next
+0x30b: 70c002000000000000   |     jmp test
+                            | 
+0x314:                      | inner_if:
+                            | 
+                            |     # inner_if_part (a->data <= b->data) TRUE 
+0x314: 40720800000000000000 |     rmmovq %rdi,8(%rdx)     # tail -> next = a
+0x31e: 2072                 |     rrmovq %rdi, %rdx       # tail = (a) tail -> next 
+0x320: 50770800000000000000 |     mrmovq 8(%rdi),%rdi     # a = a -> next
+0x32a: 70c002000000000000   |     jmp test
+                            | 
+                            | 
+                            | 
+0x333:                      | attach_end_a:
+0x333: 40720800000000000000 |     rmmovq %rdi,8(%rdx)     # tail -> next = a
+0x33d: 705003000000000000   |     jmp done_it
+                            | 
+0x346:                      | attach_end_b:
+0x346: 40620800000000000000 |     rmmovq %rsi,8(%rdx)     # tail -> next = b
+                            | 
+                            | 
+0x350:                      | done_it:
+                            |     # return dummy.next
+0x350: 50040800000000000000 |     mrmovq 8(%rsp),%rax     # return val = dummy.next
+0x35a: 30f81000000000000000 |     irmovq $16, %r8
+0x364: 6084                 |     addq   %r8, %rsp
+0x366: 90                   |     ret
+                            | 
+                            | 
+                            | 
+                            | 
+                            | 
+                            | # Stack starts here and grows to lower addresses
+0x800:                      |     .pos 0x800
+0x800:                      | stack:

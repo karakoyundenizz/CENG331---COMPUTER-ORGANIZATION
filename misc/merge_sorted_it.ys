@@ -1,0 +1,122 @@
+# Name-Surname: Deniz Karakoyun
+# ID: 2580678
+
+
+
+# Execution begins at address 0 
+.pos 0
+    irmovq stack, %rsp      # Set up stack pointer
+    call Main               # Execute main program
+    halt                    # Terminate program
+
+# Array Data 
+.pos 0x200
+    .align 8
+a:
+    .quad 1
+    .quad a1
+a1:
+    .quad 4
+    .quad a2
+a2:
+    .quad 7
+    .quad a3      
+a3:
+    .quad 10
+    .quad 0       # NULL 
+b:
+    .quad 2
+    .quad b1
+b1:
+    .quad 3
+    .quad b2
+b2:
+    .quad 5
+    .quad b3      
+b3:
+    .quad 8
+    .quad 0       # NULL
+
+
+
+
+
+Main:
+    irmovq a, %rdi        # 1st argument = list a
+    irmovq b, %rsi        # 2nd argument = list b
+    call merge_sorted_it
+    ret
+
+
+
+
+merge_sorted_it:
+
+    # dummy is now located at address %rsp to store head poinetr
+    irmovq $16, %r8
+    subq   %r8, %rsp
+
+    # struct Node *tail = &dummy
+    rrmovq %rsp, %rdx     
+    
+    # set dummy.next = NULL(0)
+    irmovq $0, %r8
+    rmmovq %r8, 8(%rdx)
+
+
+    # rdx = tail pointer
+
+test:
+
+    # while condition (a != NULL && b != NULL)
+    andq %rdi,%rdi
+    je attach_end_b
+    andq %rsi,%rsi
+    je attach_end_a
+
+loop:
+
+    # check (a->data <= b->data)
+    mrmovq (%rdi),%r9         # a->data
+    mrmovq (%rsi),%r10        # b->data
+    subq  %r9,%r10            #doing b->data -= a -> data  
+    jge inner_if
+
+    # else_part (a->data <= b->data) FALSE 
+    rmmovq %rsi,8(%rdx)     # tail -> next = b
+    rrmovq %rsi, %rdx       # tail = (b) tail -> next
+    mrmovq 8(%rsi),%rsi     # b = b -> next
+    jmp test
+
+inner_if:
+
+    # inner_if_part (a->data <= b->data) TRUE 
+    rmmovq %rdi,8(%rdx)     # tail -> next = a
+    rrmovq %rdi, %rdx       # tail = (a) tail -> next 
+    mrmovq 8(%rdi),%rdi     # a = a -> next
+    jmp test
+
+
+
+attach_end_a:
+    rmmovq %rdi,8(%rdx)     # tail -> next = a
+    jmp done_it
+
+attach_end_b:
+    rmmovq %rsi,8(%rdx)     # tail -> next = b
+
+
+done_it:
+    # return dummy.next
+    mrmovq 8(%rsp),%rax     # return val = dummy.next
+    irmovq $16, %r8
+    addq   %r8, %rsp
+    ret
+
+
+
+
+
+# Stack starts here and grows to lower addresses
+    .pos 0x800
+stack:

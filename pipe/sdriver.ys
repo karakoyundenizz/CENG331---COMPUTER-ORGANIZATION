@@ -1,0 +1,304 @@
+#######################################################################
+# Test for copying block of size 4;
+#######################################################################
+	.pos 0
+main:	irmovq Stack, %rsp  	# Set up stack pointer
+
+	# Set up arguments for copy function and then invoke it
+	irmovq $4, %rdx		# src and dst have 4 elements
+	irmovq dest, %rsi	# dst array
+	irmovq src, %rdi	# src array
+    # corrupt all the unused registers to prevent assumptions
+    irmovq $0x5710331, %rax
+    irmovq $0x5710331, %rbx
+    irmovq $0x5710331, %rcx
+    irmovq $0x5710331, %rbp
+    irmovq $0x5710331, %r8
+    irmovq $0x5710331, %r9
+    irmovq $0x5710331, %r10
+    irmovq $0x5710331, %r11
+    irmovq $0x5710331, %r12
+    irmovq $0x5710331, %r13
+    irmovq $0x5710331, %r14
+	call to_morse_digit_string		
+	 
+	halt			# should halt with sum in %rax
+StartFun:
+##################################################################
+# to_morse_digit_string.ys - Convert an arr block of len digits  
+# (0..9) to 5-character Morse code strings and store in buff.
+# Return the sum of digits contained in arr.
+# Include your name and ID here.
+# Describe how and why you modified the baseline code.
+##################################################################
+# Do not modify this portion
+# Function prologue.
+# %rdi = arr, %rsi = buff, %rdx = len
+to_morse_digit_string:
+##################################################################
+# You can modify this portion
+
+# Name-Surname: Deniz Karakoyun
+# ID: 2580678
+#
+##################### MODIFICATIONS ###########################
+#
+# 1. Complete Rewrite for Pipeline Efficiency:
+#    (Average CPE : 148.46 -> 67.15)
+#    I realized the baseline code was structurally inefficient for a pipelined
+#    architecture. So I rewrote the whole function from scratch to strictly avoid 
+#    Load/Use hazards(as I remember there was only 1 in original function, but still), 
+#    jump mispredictions(for example when testing for dashe or dot loop I used jXX loop since it will directly jump before testing it will save some cycles, since it will fail once but may succed more than one; so I thought it would be better)
+#    avoiding uncessesary registers and jumps(if I make unconditional jump I just wrote the jumping part after we used jump and delet jump so that 1 cycle is not wasted), 
+#.   merged some same function parts like 0 and 1-5 cases, reordered the loops and condition control parts
+#    so that there are less jumps and it losses no cycle in vain, and finally some general logical stuff that 
+#    which  generally cost more than 1 cycle per occurrence. Since operational 
+#    commands only work with registers, I structured the code to load memory 
+#    values into registers early and scheduled independent instructions 
+#    between the Load and the Use to hide latency bubbles.
+#
+# 2. Saving Callee-Saved Registers and Register Constants:
+#    (Average CPE : 67.15 -> 57.51)
+#    I needed to use some registers in order to declare constants and local variables to make it faster than declaring in memory(caching)
+#    I saved the callee-saved registers that I use in my function.
+#    In addition, since I use the same constants (1, 5, 8, '45', '46') over and over again in both comparison and assignment, fetching 
+#    them with 'irmovq' inside loops wastes fetch/decode bandwidth. I declared 
+#    a dedicated "CONSTANTS" section to load these into registers 
+#    (%rbx, %rcx, %r12, etc.) once. This saves a minimum of 1 cycle per constant usage.
+#
+# 3. Custom 'CMPQ' via 'TESTQ:
+#    (Average CPE : 57.51 -> 49.66)
+#    Standard comparison requires copying a value to a temp register and subtracting,
+#    which wastes instructions. I modified the pipe-full.hcl to make the 'testq' 
+#    instruction behave like 'cmpq' (performing ALUSUB without write-back). 
+#    This allowed me to check conditions like (d <= 5) in a single cycle instead of 2. 
+#    This specific change diminished my first measured CPE from 57.51 down to 49.51.
+#
+# 4. Jump Prediction & Stack Optimization:
+#       (Average CPE: 49.66 -> 49.51)
+#    - "Prepare" Block: I created a 'prepare' label for pushing callee-saved 
+#      registers. Instead of pushing them immediately, I check 'len' first. 
+#      If len <= 0, I return immediately, avoiding the heavy cost of 8 extra 
+#      stack operations (4 pushes + 4 pops). It did not change the CPE but if there were a lot of 
+#      inputs with len <= 0 it would affect in pozitive manner.
+#    - Branch Prediction Hack: I structured the initial check as "jg prepare" 
+#      followed by a "ret". Since the standard branch predictor predicts 
+#      conditional jumps as TAKEN, and the function usually runs with valid data 
+#      (len > 0), this logic avoids a misprediction flush at the very start of 
+#      every function call.
+#
+# 5. Logic Merging & Loop Optimization:
+#.     (Average CPE: 49.51 -> 48.83)
+#    - 0-5 Merge: The logic for digit 0 and digits 1-5 is structurally identical 
+#      (dots then dashes). I merged them into a single 'Digit0to5' block to reduce 
+#      code size and branching complexity. I did this in phase 1 Complete Rewrite.
+#    - Loop Structure: I avoided unconditional jumps inside loops (which cost 
+#      cycles). Instead of a standard "Jump-to-Top" while loop, I used a 
+#      "Guarded Do-While" structure where I duplicate the conditional check 
+#      (writing it twice: one test before loop, one test at end). This ensures that 
+#      every jump taken is a useful conditional jump, saving 1 cycle per iteration. 
+#      For some loops if I wrote test conditions at begining of every loop since we need to use jump to another place(condition didnt satisfy
+#      because if the condition satisfies it wont jump and continue with the loop body) and since every jump is assumed taken it constants
+#      more than current cycle.(Average CPE: 49.51 -> 49.83) so I just used 
+#      goto test
+#      loop_body
+#      test     structure in order to prevent these.
+##################################################################
+
+
+    xorq %rax, %rax          # sum = 0
+    andq %rdx, %rdx
+    jg prepare
+    ret
+
+
+
+prepare:
+    pushq %rbx
+    pushq %r12
+    pushq %r13
+    pushq %r14
+
+
+
+    ## CONSTANTS 
+    irmovq $1, %rbx          # for incrementations +1
+    irmovq $5, %rcx          # loop limit 5 also for morse code character changing line
+    irmovq $8, %r8          # for arr++
+    irmovq $45, %r13        # '-'
+    irmovq $46, %r14        # '.' 
+
+    
+while_loop:
+    mrmovq (%rdi), %r9       # r9 = d
+    rrmovq %rsi, %r10        # temp = buff
+    addq   %r9, %rax         # sum += d
+
+    xorq   %r11, %r11        # i = 0
+
+    
+d_check: 
+
+    #rrmovq %r9, %r12         # d <= 5 ?
+    #subq   %rcx, %r12         # d - 5
+    # try to use testq as cmp operation
+    testq  %rcx, %r9
+
+    jg     Digit6to9         # d > 5 -> 6..9 case
+
+
+
+################ DIGITS [0,5] #######################
+
+Digit0to5:
+    jmp test_for_dot_0to5
+
+dot_loop_0to5:
+    rmmovq %r14, (%r10)      # *temp = ch
+
+    addq   %rbx, %r10         # temp++
+    addq   %rbx, %r11         # i++
+
+test_for_dot_0to5:
+    #rrmovq %r11, %r12       # if (i >= d) break;
+    #subq   %r9, %r12         # i - d
+    # try to use testq as cmp operation
+    testq  %r9, %r11
+    jl dot_loop_0to5
+
+    jmp test_for_dashe_0to5
+
+dashe_loop_0to5:
+    rmmovq %r13, (%r10)      # *temp = ch
+
+    addq   %rbx, %r10         # temp++
+    addq   %rbx, %r11         # i++
+
+test_for_dashe_0to5:
+    #rrmovq %r11, %r12       # if (i >= 5) break;
+    #subq   %rcx, %r12         # i - 5
+    # try to use testq as cmp operation
+    testq  %rcx, %r11
+    jl dashe_loop_0to5
+
+    # case 0to5 is finished for this element of arr so back to test for while
+    # instead of jumping I wrote again to save cycle
+while_loop_test0:
+    addq   %r8, %rdi        # arr++
+
+    addq   %rcx, %rsi          # buff += 5
+
+    subq   %rbx, %rdx           # len--
+    jg   while_loop
+
+popping0:
+    popq %r14
+    popq %r13
+    popq %r12
+    popq %rbx
+
+    ret
+
+################ DIGITS [6,9] #######################
+
+Digit6to9:
+    subq   %rcx, %r9          # d = d - 5 so right indexing
+    jmp test_for_dashe_6to9
+
+dashe_loop_6to9:
+    rmmovq %r13, (%r10)      # *temp = ch
+
+    addq   %rbx, %r10         # temp++
+    addq   %rbx, %r11         # i++
+
+test_for_dashe_6to9:
+    #rrmovq %r11, %r12       # if (i >= d) break;
+    #subq   %r9, %r12         # i - d
+    # try to use testq as cmp operation
+    testq  %r9, %r11
+    jl dashe_loop_6to9
+
+    jmp test_for_dot_6to9
+
+dot_loop_6to9:
+    rmmovq %r14, (%r10)      # *temp = ch
+
+    addq   %rbx, %r10         # temp++
+    addq   %rbx, %r11         # i++
+
+test_for_dot_6to9:
+    #rrmovq %r11, %r12       # if (i >= 5) break;
+    #subq   %rcx, %r12         # i - 5
+    # try to use testq as cmp operation
+    testq  %rcx, %r11
+    jl dot_loop_6to9
+
+
+################ WHILE LOOP TEST #######################
+while_loop_test:
+    addq   %r8, %rdi        # arr++
+
+    addq   %rcx, %rsi          # buff += 5
+
+    subq   %rbx, %rdx           # len--
+    jg   while_loop
+
+ ## popping callee saved regs
+popping:
+    popq %r14
+    popq %r13
+    popq %r12
+    popq %rbx
+
+##################################################################
+# Do not modify the following section of code
+# Function epilogue.
+Done:
+    ret
+##################################################################
+# Keep the following label at the end of your function
+End:
+EndFun:
+
+###############################
+# Source and destination blocks 
+###############################
+	.align 8
+src:
+	.quad 0
+	.quad 1
+	.quad 2
+	.quad 3
+	.quad 0xbcdefa # This shouldn't get moved
+
+	.align 16
+Predest:
+	.quad 0xbcdefa
+dest:
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+Postdest:
+	.quad 0xdefabc
+
+.align 8
+# Run time stack
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+
+Stack:

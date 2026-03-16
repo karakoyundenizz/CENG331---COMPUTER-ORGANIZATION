@@ -1,0 +1,107 @@
+                            | # Name-Surname: Deniz Karakoyun
+                            | # ID: 2580678
+                            | 
+                            | 
+                            | 
+                            | # Execution begins at address 0 
+0x000:                      | .pos 0
+0x000: 30f40008000000000000 |     irmovq stack, %rsp      # Set up stack pointer
+0x00a: 808002000000000000   |     call Main               # Execute main program
+0x013: 00                   |     halt                    # Terminate program
+                            | 
+                            | # Array Data 
+0x200:                      | .pos 0x200
+0x200:                      |     .align 8
+0x200:                      | a:
+0x200: 0100000000000000     |     .quad 1
+0x208: 1002000000000000     |     .quad a1
+0x210:                      | a1:
+0x210: 0400000000000000     |     .quad 4
+0x218: 2002000000000000     |     .quad a2
+0x220:                      | a2:
+0x220: 0700000000000000     |     .quad 7
+0x228: 3002000000000000     |     .quad a3      
+0x230:                      | a3:
+0x230: 0a00000000000000     |     .quad 10
+0x238: 0000000000000000     |     .quad 0       # NULL 
+0x240:                      | b:
+0x240: 0200000000000000     |     .quad 2
+0x248: 5002000000000000     |     .quad b1
+0x250:                      | b1:
+0x250: 0300000000000000     |     .quad 3
+0x258: 6002000000000000     |     .quad b2
+0x260:                      | b2:
+0x260: 0500000000000000     |     .quad 5
+0x268: 7002000000000000     |     .quad b3      
+0x270:                      | b3:
+0x270: 0800000000000000     |     .quad 8
+0x278: 0000000000000000     |     .quad 0       # NULL
+                            | 
+                            | 
+                            | 
+                            | 
+                            | 
+                            | 
+0x280:                      | Main:
+0x280: 30f70002000000000000 |     irmovq a, %rdi        # 1st argument = list a
+0x28a: 30f64002000000000000 |     irmovq b, %rsi        # 2nd argument = list b
+0x294: 809e02000000000000   |     call merge_sorted_rec
+0x29d: 90                   |     ret
+                            | 
+                            | 
+                            | 
+                            | 
+0x29e:                      | merge_sorted_rec:
+                            | 
+0x29e: a0df                 |     pushq %r13 
+0x2a0: a0cf                 |     pushq %r12
+                            | 
+                            |     # if control with a==NULL 
+0x2a2: 2060                 |     rrmovq %rsi,%rax
+0x2a4: 6277                 |     andq %rdi,%rdi
+0x2a6: 732a03000000000000   |     je     done_rec
+                            | 
+                            |     # if control with b==NULL 
+0x2af: 2070                 |     rrmovq %rdi,%rax
+0x2b1: 6266                 |     andq %rsi,%rsi
+0x2b3: 732a03000000000000   |     je     done_rec
+                            | 
+                            |     # checking (a->data <= b->data) part r9 = a->data | r10 = b->data
+0x2bc: 50970000000000000000 |     mrmovq (%rdi),%r9         # a->data
+0x2c6: 50a60000000000000000 |     mrmovq (%rsi),%r10        # b->data
+0x2d0: 619a                 |     subq  %r9,%r10            #doing b->data -= a -> data 
+0x2d2: 720703000000000000   | 	jl else_part
+                            | 
+                            | 
+                            |     # r12 = rdi = a  | r13 = rsi = b
+                            | 
+                            | 
+                            |     # if part (a->data <= b->data) TRUE
+0x2db: 207c                 |     rrmovq %rdi,%r12
+0x2dd: 206d                 |     rrmovq %rsi,%r13
+0x2df: 50770800000000000000 |     mrmovq 8(%rdi),%rdi        # preparing recursive function call with rdi a = a-> next
+0x2e9: 809e02000000000000   |     call merge_sorted_rec
+0x2f2: 400c0800000000000000 |     rmmovq %rax, 8(%r12)
+0x2fc: 20c0                 |     rrmovq %r12, %rax
+0x2fe: 702a03000000000000   |     jmp done_rec
+                            | 
+0x307:                      | else_part:
+                            | 
+                            |     # else part (a->data <= b->data) FALSE
+0x307: 207c                 |     rrmovq %rdi,%r12
+0x309: 206d                 |     rrmovq %rsi,%r13
+0x30b: 50660800000000000000 |     mrmovq 8(%rsi),%rsi        # preparing recursive function call with rdi b = b -> next
+0x315: 809e02000000000000   |     call merge_sorted_rec
+0x31e: 400d0800000000000000 |     rmmovq %rax, 8(%r13)
+0x328: 20d0                 |     rrmovq %r13, %rax
+                            | 
+0x32a:                      | done_rec:
+0x32a: b0cf                 |     popq  %r12
+0x32c: b0df                 |     popq  %r13
+0x32e: 90                   |     ret
+                            | 
+                            | 
+                            | 
+                            | # Stack starts here and grows to lower addresses
+0x800:                      | 	.pos 0x800
+0x800:                      | stack:
