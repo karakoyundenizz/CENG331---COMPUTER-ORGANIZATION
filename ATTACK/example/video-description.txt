@@ -1,0 +1,11 @@
+This video demonstrates how to solve CENG 331 Attack Lab on a simplified example.
+
+Edited with Kdenlive.
+
+Transition soundtrack: https://www.youtube.com/watch?v=uZ_U0-OJQiE
+
+TIMESTAMPS
+00:00 Intro
+00:07 Level 1
+03:07 Level 2: Code Injection
+08:14 Level 2: Return-Oriented Programming

