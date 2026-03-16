@@ -1,0 +1,41 @@
+.pos 0
+    irmovq $7, %rax
+    irmovq $3, %rbx
+    testq %rax, %rbx
+    jg L1
+    irmovq $0xdead, %rax
+    halt
+
+L1:
+    irmovq $0x8000000000000000, %rax
+    irmovq $-1, %rbx
+    testq %rax, %rbx
+    jl L2
+    irmovq $0xdead, %rax
+    halt
+
+L2:
+    irmovq $3, %rax
+    irmovq $4, %rbx
+    testq %rax, %rbx
+    je L3
+    irmovq $0xdead, %rax
+    halt
+
+L3:
+    jle L4
+    irmovq $0xdead, %rax
+    halt
+
+L4:
+    irmovq $7, %rax
+    irmovq $1, %rbx
+    testq %rax, %rbx
+    jge L5
+    irmovq $0xdead, %rax
+    halt
+
+L5:
+    irmovq $0xbeef, %rax
+    halt
+    

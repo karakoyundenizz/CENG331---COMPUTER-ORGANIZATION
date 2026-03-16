@@ -1,0 +1,40 @@
+0x000:                      | .pos 0
+0x000: 30f00700000000000000 |     irmovq $7, %rax
+0x00a: 30f30300000000000000 |     irmovq $3, %rbx
+0x014: d003                 |     testq %rax, %rbx
+0x016: 762a00000000000000   |     jg L1
+0x01f: 30f0adde000000000000 |     irmovq $0xdead, %rax
+0x029: 00                   |     halt
+                            | 
+0x02a:                      | L1:
+0x02a: 30f00000000000000080 |     irmovq $0x8000000000000000, %rax
+0x034: 30f3ffffffffffffffff |     irmovq $-1, %rbx
+0x03e: d003                 |     testq %rax, %rbx
+0x040: 725400000000000000   |     jl L2
+0x049: 30f0adde000000000000 |     irmovq $0xdead, %rax
+0x053: 00                   |     halt
+                            | 
+0x054:                      | L2:
+0x054: 30f00300000000000000 |     irmovq $3, %rax
+0x05e: 30f30400000000000000 |     irmovq $4, %rbx
+0x068: d003                 |     testq %rax, %rbx
+0x06a: 737e00000000000000   |     je L3
+0x073: 30f0adde000000000000 |     irmovq $0xdead, %rax
+0x07d: 00                   |     halt
+                            | 
+0x07e:                      | L3:
+0x07e: 719200000000000000   |     jle L4
+0x087: 30f0adde000000000000 |     irmovq $0xdead, %rax
+0x091: 00                   |     halt
+                            | 
+0x092:                      | L4:
+0x092: 30f00700000000000000 |     irmovq $7, %rax
+0x09c: 30f30100000000000000 |     irmovq $1, %rbx
+0x0a6: d003                 |     testq %rax, %rbx
+0x0a8: 75bc00000000000000   |     jge L5
+0x0b1: 30f0adde000000000000 |     irmovq $0xdead, %rax
+0x0bb: 00                   |     halt
+                            | 
+0x0bc:                      | L5:
+0x0bc: 30f0efbe000000000000 |     irmovq $0xbeef, %rax
+0x0c6: 00                   |     halt
